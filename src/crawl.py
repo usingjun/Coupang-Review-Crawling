@@ -34,8 +34,9 @@ class Coupang():
         self.base_review_url :str = 'https://www.coupang.com/vp/product/reviews'
         self.sd = SaveData()
         
-        # 브라우저처럼 보이도록 User-Agent 설정
+        # 브라우저처럼 보이도록 User-Agent 및 Accept-Language 설정
         self.__headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36'
+        self.__headers['Accept-Language'] = 'ko-KR,ko;q=0.8,en-US;q=0.5,en;q=0.3'
     
     def get_title(self, prod_code: str) -> str:
         url = f'https://www.coupang.com/vp/products/{prod_code}'
