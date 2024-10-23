@@ -14,7 +14,7 @@ def get_headers(key: str) -> dict[str, dict[str,str]] | None:
     with open(JSON_FILE,'r',encoding='UTF-8') as file:
         headers = json.loads(file.read())
 
-    try :
+    try:
         return headers[key]
     except:
         raise EnvironmentError(f'Set the {key}')
@@ -33,6 +33,9 @@ class Coupang():
         self.__headers : dict[str,str] = get_headers(key='headers')
         self.base_review_url :str = 'https://www.coupang.com/vp/product/reviews'
         self.sd = SaveData()
+        
+        # 브라우저처럼 보이도록 User-Agent 설정
+        self.__headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36'
     
     def get_title(self, prod_code: str) -> str:
         url = f'https://www.coupang.com/vp/products/{prod_code}'
@@ -77,12 +80,12 @@ class Coupang():
         with rq.Session() as session:
             [self.fetch(session=session, payload=payload) for payload in payloads]
 
-    def fetch(self, session: rq.Session, payload: list[dict]) -> None:
+    def fetch(self, session: rq.Session, payload: dict) -> None:
         now_page :str = payload['page']
         print(f"\n[INFO] Start crawling page {now_page} ...\n")
-        with session.get(url=self.base_review_url, headers=self.__headers, params=payload) as response :
+        with session.get(url=self.base_review_url, headers=self.__headers, params=payload) as response:
             html = response.text
-            soup = bs(html,'html.parser')
+            soup = bs(html, 'html.parser')
             
             # 상품명
             title = soup.select_one('h1.prod-buy-header__title')
@@ -116,7 +119,7 @@ class Coupang():
                 rating = articles[idx].select_one('div.sdp-review__article__list__info__product-info__star-orange')
                 if rating == None:
                     rating = 0
-                else :
+                else:
                     rating = int(rating.attrs['data-rating'])
 
                 # 구매자 상품명
@@ -135,10 +138,10 @@ class Coupang():
 
                 # 리뷰 내용
                 review_content = articles[idx].select_one('div.sdp-review__article__list__review > div')
-                if review_content == None :
+                if review_content == None:
                     review_content = '등록된 리뷰내용이 없습니다'
                 else:
-                    review_content = re.sub('[\n\t]','',review_content.text.strip())
+                    review_content = re.sub('[\n\t]', '', review_content.text.strip())
 
                 # 맛 만족도
                 answer = articles[idx].select_one('span.sdp-review__article__list__survey__row__answer')
@@ -156,7 +159,7 @@ class Coupang():
                 dict_data['review_content'] = review_content
                 dict_data['answer'] = answer
                 self.sd.save(datas=dict_data)
-                print(dict_data , '\n')
+                print(dict_data, '\n')
             time.sleep(1)
     
     @staticmethod
@@ -166,22 +169,21 @@ class Coupang():
             command = 'cls'
         os.system(command=command)
 
-    def input_review_url(self)-> str:
+    def input_review_url(self) -> str:
         while True:
             self.clear_console()            
-            review_url : str = input('원하시는 상품의 URL 주소를 입력해주세요\n\nEx)\nhttps://www.coupang.com/vp/products/7335597976?itemId=18741704367&vendorItemId=85873964906&q=%ED%9E%98%EB%82%B4%EB%B0%94+%EC%B4%88%EC%BD%94+%EC%8A%A4%EB%8B%88%EC%BB%A4%EC%A6%88&itemsCount=36&searchId=0c5c84d537bc41d1885266961d853179&rank=2&isAddedCart=\n\n:')
-            if not review_url :
+            review_url : str = input('원하시는 상품의 URL 주소를 입력해주세요\n\n:')
+            if not review_url:
                 # 터미널 초기화
                 self.clear_console()
-                
                 print('URL 주소가 입력되지 않았습니다')
                 continue
             return review_url
 
-    def calculate_total_pages(self, review_counts: int)-> int:
+    def calculate_total_pages(self, review_counts: int) -> int:
         reviews_per_page :int = 5
         return int(math.ceil(review_counts / reviews_per_page))
-        
+
 class SaveData():
     def __init__(self) -> None:
         self.wb :Workbook = Workbook()
